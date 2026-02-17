@@ -21,7 +21,9 @@ export class PaletteService {
 
     getAll(): Observable<Palette[]> {
         return forkJoin([
-            this.loadPalette('hama', 'H'),
+            this.loadPalette('hama', 'H', 'Hama Midi'),
+            this.loadPalette('hama_mini', 'H', 'Hama Mini'),
+            this.loadPalette('hama_maxi', 'H', 'Hama Maxi'),
             this.loadPalette('nabbi', 'N'),
             this.loadPalette('artkal_a', 'A', 'Artkal A-2.6MM'),
             this.loadPalette('artkal_c', 'C', 'Artkal C-2.6MM'),
