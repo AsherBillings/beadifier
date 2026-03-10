@@ -29,42 +29,45 @@ export class ImagePosition {
     }
 }
 
+export interface CropRect {
+    sx: number;
+    sy: number;
+    sw: number;
+    sh: number;
+}
+
 export function drawImageInsideCanvas(
     canvas,
     image,
-    rendererConfiguration: RendererConfiguration
+    rendererConfiguration: RendererConfiguration,
+    crop?: CropRect
 ): ImagePosition {
     /**
      * Credit to : https://sdqali.in/blog/2013/10/03/fitting-an-image-in-to-a-canvas-object/
      */
 
-    const imageAspectRatio = image.width / image.height;
+    // Determine source dimensions: use crop size when provided so
+    // we compute destination rectangle based on the actual cropped area
+    // and preserve its aspect ratio when drawing into the canvas.
+    const sourceW = crop ? crop.sw : image.width;
+    const sourceH = crop ? crop.sh : image.height;
+    const imageAspectRatio = sourceW / sourceH;
     const canvasAspectRatio = canvas.width / canvas.height;
-    let renderableHeight, renderableWidth, xStart, yStart;
+    let renderableHeight: number, renderableWidth: number, xStart: number, yStart: number;
 
-    // If image's aspect ratio is less than canvas's we fit on height
-    // and place the image centrally along width
     if (imageAspectRatio < canvasAspectRatio) {
-        renderableHeight = rendererConfiguration.fit
-            ? canvas.height
-            : image.height;
+        renderableHeight = rendererConfiguration.fit ? canvas.height : sourceH;
         renderableWidth = rendererConfiguration.fit
-            ? image.width * (renderableHeight / image.height)
-            : image.width;
+            ? sourceW * (renderableHeight / sourceH)
+            : sourceW;
     } else if (imageAspectRatio > canvasAspectRatio) {
-        renderableWidth = rendererConfiguration.fit
-            ? canvas.width
-            : image.width;
+        renderableWidth = rendererConfiguration.fit ? canvas.width : sourceW;
         renderableHeight = rendererConfiguration.fit
-            ? image.height * (renderableWidth / image.width)
-            : image.height;
+            ? sourceH * (renderableWidth / sourceW)
+            : sourceH;
     } else {
-        renderableHeight = rendererConfiguration.fit
-            ? canvas.height
-            : image.height;
-        renderableWidth = rendererConfiguration.fit
-            ? canvas.width
-            : image.width;
+        renderableHeight = rendererConfiguration.fit ? canvas.height : sourceH;
+        renderableWidth = rendererConfiguration.fit ? canvas.width : sourceW;
     }
 
     xStart = rendererConfiguration.center
@@ -79,16 +82,34 @@ export function drawImageInsideCanvas(
     const rrenderableWidth = Math.floor(renderableWidth);
     const rrenderableHeight = Math.floor(renderableHeight);
 
-    canvas.getContext('2d').filter = image.style.filter;
-    canvas
-        .getContext('2d')
-        .drawImage(
+    const ctx = canvas.getContext('2d');
+    ctx.filter = image.style.filter;
+    if (crop) {
+        // draw only cropped source area into the destination rectangle
+        ctx.drawImage(
             image,
+            Math.floor(crop.sx),
+            Math.floor(crop.sy),
+            Math.floor(crop.sw),
+            Math.floor(crop.sh),
             rxStart,
             ryStart,
             rrenderableWidth,
             rrenderableHeight
         );
+    } else {
+        ctx.drawImage(
+            image,
+            0,
+            0,
+            image.width,
+            image.height,
+            rxStart,
+            ryStart,
+            rrenderableWidth,
+            rrenderableHeight
+        );
+    }
     return new ImagePosition(
         rxStart,
         ryStart,

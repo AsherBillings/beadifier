@@ -18,3 +18,71 @@
     top: 0px;
     left: 0px;
 }
+
+.crop-overlay {
+    position: absolute;
+    box-shadow: 0 0 0 20000px rgba(0, 0, 0, 0.4) inset;
+    border: 2px dashed #fff;
+    box-sizing: border-box;
+    cursor: move;
+}
+
+.crop-overlay .handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border: 1px solid #000;
+    box-sizing: border-box;
+}
+.crop-overlay .handle.left {
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: ew-resize;
+}
+.crop-overlay .handle.right {
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: ew-resize;
+}
+.crop-overlay .handle.top {
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: ns-resize;
+}
+.crop-overlay .handle.bottom {
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: ns-resize;
+}
+
+.crop-overlay .handle.corner {
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border: 1px solid #000;
+}
+.crop-overlay .handle.corner.tl {
+    left: -7px;
+    top: -7px;
+    cursor: nwse-resize;
+}
+.crop-overlay .handle.corner.tr {
+    right: -7px;
+    top: -7px;
+    cursor: nesw-resize;
+}
+.crop-overlay .handle.corner.bl {
+    left: -7px;
+    bottom: -7px;
+    cursor: nesw-resize;
+}
+.crop-overlay .handle.corner.br {
+    right: -7px;
+    bottom: -7px;
+    cursor: nwse-resize;
+}
