@@ -1,6 +1,6 @@
 <div fxLayout="column" fxLayoutGap="1em">
-    <div>
-        <mat-form-field>
+    <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="1em">
+        <mat-form-field fxFlex>
             <mat-select
                 multiple
                 aria-label="palettes"
@@ -24,12 +24,21 @@
         *ngFor="let palette of configuration.palettes"
         fxLayoutAlign="start center"
     >
-        <div fxLayout="row wrap" fxFlex="100%" style="margin-bottom: 1em">
-            <mat-slide-toggle
-                [checked]="enableAllPaletteEntry[palette.name]"
-                (change)="toggleAll($event, palette.name)"
-                >All</mat-slide-toggle
-            >
+        <div fxFlex="100%" style="margin-bottom: 1em">
+            <ng-container *ngIf="getPresets(palette.name) | async as presets">
+                <mat-form-field *ngIf="presets.length > 0">
+                    <mat-select
+                        placeholder="Presets"
+                        [(ngModel)]="selectedPresets[palette.name]"
+                        (selectionChange)="applyPreset(palette, $event.value)"
+                    >
+                        <mat-option [value]="'__no_colours__'">No colours</mat-option>
+                        <mat-option *ngFor="let preset of presets" [value]="preset.name">
+                            {{ preset.name }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </ng-container>
         </div>
         <div
             fxFlex.xs="50%"

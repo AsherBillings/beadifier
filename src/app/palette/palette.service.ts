@@ -5,7 +5,7 @@ import { Palette, PaletteEntry } from '../model/palette/palette.model';
 
 import * as _ from 'lodash';
 import { Observable, of, forkJoin } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError, shareReplay } from 'rxjs/operators';
 import { Color } from '../model/color/color.model';
 
 const BW_PALETTE = new Palette('B&W', [
@@ -18,6 +18,32 @@ export class PaletteService {
     private palettes: Map<string, Palette> = new Map();
 
     constructor(private http: HttpClient) {}
+
+    // Presets are stored as JSON files under `assets/presets/{name}.json`.
+    private presetsCache: Map<string, Observable<{ name: string; refs: string[] }[]>> = new Map();
+
+    getPresets(paletteName: string): Observable<{ name: string; refs: string[] }[]> {
+        const key = (paletteName || '').toLowerCase();
+        if (this.presetsCache.has(key)) {
+            return this.presetsCache.get(key);
+        }
+        const obs = this.http.get<{ name: string; refs: string[] }[]>(`assets/presets/${key}.json`).pipe(
+            map((presets) => {
+                const list = presets || [];
+                // Prepend default "All colours" preset, avoid duplicate names
+                const names = new Set(list.map((p) => p.name));
+                const defaultPreset = { name: 'All colours', refs: ['*'] };
+                const result = names.has(defaultPreset.name)
+                    ? list
+                    : [defaultPreset, ...list];
+                return result;
+            }),
+            catchError(() => of([{ name: 'All colours', refs: ['*'] }])),
+            shareReplay(1)
+        );
+        this.presetsCache.set(key, obs);
+        return obs;
+    }
 
     getAll(): Observable<Palette[]> {
         return forkJoin([

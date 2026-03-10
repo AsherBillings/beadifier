@@ -15,24 +15,55 @@ export class PaletteConfigurationComponent {
     @Output() onChange = new EventEmitter<PaletteConfiguration>();
 
     availablePalettes: Observable<Palette[]>;
-    enableAllPaletteEntry: Map<string, boolean>;
+    selectedPresets: any = {};
 
-    constructor(private paletteService: PaletteService) {
+    constructor(public paletteService: PaletteService) {
         this.availablePalettes = paletteService.getAll();
-        this.enableAllPaletteEntry = new Map();
-
-        this.availablePalettes.subscribe((palettes) =>
-            palettes.forEach((p) => (this.enableAllPaletteEntry[p.name] = true))
-        );
     }
 
-    toggleAll(e, name) {
-        this.configuration.palettes.forEach((p) => {
-            if (p.name === name) {
-                p.entries.forEach((entry) => (entry.enabled = e.checked));
+
+    getPresets(name: string): Observable<{ name: string; refs: string[] }[]> {
+        return this.paletteService.getPresets(name);
+    }
+
+    applyPreset(palette: Palette, presetName: string) {
+        if (!presetName) {
+            return;
+        }
+        // special-case: No colours preset disables all entries
+        if (presetName === '__no_colours__') {
+            palette.entries.forEach((entry) => (entry.enabled = false));
+            this.callback();
+            return;
+        }
+        this.paletteService.getPresets(palette.name).subscribe((presets) => {
+            const preset = (presets || []).find((p) => p.name === presetName);
+            if (!preset) {
+                return;
             }
+            // If preset.refs contains '*' treat it as "select all colours"
+            if ((preset.refs || []).some((r) => r === '*')) {
+                palette.entries.forEach((entry) => (entry.enabled = true));
+                this.callback();
+                return;
+            }
+            palette.entries.forEach((entry) => {
+                const match = (preset.refs || []).some((r) => {
+                    if (!entry.ref) return false;
+                    return entry.ref === r;
+                });
+                entry.enabled = match;
+            });
+            this.callback();
         });
-        this.callback();
+    }
+
+    applyPresetToSelected(presetName: string) {
+        if (!presetName) {
+            return;
+        }
+        if (!this.configuration || !this.configuration.palettes) return;
+        this.configuration.palettes.forEach((p) => this.applyPreset(p, presetName));
     }
 
     paletteEquality(o1: Palette, o2: Palette) {
@@ -41,5 +72,14 @@ export class PaletteConfigurationComponent {
 
     callback() {
         this.onChange.emit(this.configuration);
+        // Ensure each selected palette has a default preset selected (All colours)
+        if (this.configuration && this.configuration.palettes && this.configuration.palettes.length > 0) {
+            this.configuration.palettes.forEach((p) => {
+                if (!this.selectedPresets[p.name]) {
+                    this.selectedPresets[p.name] = 'All colours';
+                    this.applyPreset(p, 'All colours');
+                }
+            });
+        }
     }
 }
