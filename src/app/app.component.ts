@@ -254,20 +254,30 @@ export class AppComponent {
                 break;
         }
 
-        // clamp
-        if (nx < 0) {
-            nw -= -nx;
-            nx = 0;
-        }
-        if (ny < 0) {
-            nh -= -ny;
-            ny = 0;
-        }
-        if (nx + nw > imgNaturalW) {
-            nw = imgNaturalW - nx;
-        }
-        if (ny + nh > imgNaturalH) {
-            nh = imgNaturalH - ny;
+        // clamp: for moves, only clamp position (do not change size)
+        if (this.dragging && this.dragging.type === 'move') {
+            if (nx < 0) nx = 0;
+            if (ny < 0) ny = 0;
+            if (nx + nw > imgNaturalW) nx = imgNaturalW - nw;
+            if (ny + nh > imgNaturalH) ny = imgNaturalH - nh;
+        } else {
+            // resizing: clamp edges to image bounds while preserving the opposite edge
+            if (nx < 0) {
+                const right = nx + nw;
+                nx = 0;
+                nw = Math.round(right - nx);
+            }
+            if (ny < 0) {
+                const bottom = ny + nh;
+                ny = 0;
+                nh = Math.round(bottom - ny);
+            }
+            if (nx + nw > imgNaturalW) {
+                nw = imgNaturalW - nx;
+            }
+            if (ny + nh > imgNaturalH) {
+                nh = imgNaturalH - ny;
+            }
         }
         if (nw < 1) nw = 1;
         if (nh < 1) nh = 1;
