@@ -297,30 +297,95 @@ export class AppComponent {
 
     cropLeft(): string {
         if (!this.displaySourceTag || !this.cropRect) return '0px';
-        const r = this.displaySourceTag.nativeElement.getBoundingClientRect();
-        const x = (this.cropRect.sx / (this.imgTag.nativeElement.naturalWidth || this.imgTag.nativeElement.width)) * r.width;
+        const m = this.getDisplayedImageMetrics();
+        if (!m) return '0px';
+        const { wrapperRect, renderedW, naturalW, offsetX } = m;
+        const x = offsetX + (this.cropRect.sx / naturalW) * renderedW;
         return Math.round(x) + 'px';
     }
 
     cropTop(): string {
         if (!this.displaySourceTag || !this.cropRect) return '0px';
-        const r = this.displaySourceTag.nativeElement.getBoundingClientRect();
-        const y = (this.cropRect.sy / (this.imgTag.nativeElement.naturalHeight || this.imgTag.nativeElement.height)) * r.height;
+        const m = this.getDisplayedImageMetrics();
+        if (!m) return '0px';
+        const { wrapperRect, renderedH, naturalH, offsetY } = m;
+        const y = offsetY + (this.cropRect.sy / naturalH) * renderedH;
         return Math.round(y) + 'px';
     }
 
     cropWidth(): string {
         if (!this.displaySourceTag || !this.cropRect) return '0px';
-        const r = this.displaySourceTag.nativeElement.getBoundingClientRect();
-        const w = (this.cropRect.sw / (this.imgTag.nativeElement.naturalWidth || this.imgTag.nativeElement.width)) * r.width;
+        const m = this.getDisplayedImageMetrics();
+        if (!m) return '0px';
+        const { renderedW, naturalW } = m;
+        const w = (this.cropRect.sw / naturalW) * renderedW;
         return Math.round(w) + 'px';
     }
 
     cropHeight(): string {
         if (!this.displaySourceTag || !this.cropRect) return '0px';
-        const r = this.displaySourceTag.nativeElement.getBoundingClientRect();
-        const h = (this.cropRect.sh / (this.imgTag.nativeElement.naturalHeight || this.imgTag.nativeElement.height)) * r.height;
+        const m = this.getDisplayedImageMetrics();
+        if (!m) return '0px';
+        const { renderedH, naturalH } = m;
+        const h = (this.cropRect.sh / naturalH) * renderedH;
         return Math.round(h) + 'px';
+    }
+
+    private getDisplayedImageMetrics():
+        | {
+              wrapperRect: DOMRect;
+              imgRect: DOMRect;
+              naturalW: number;
+              naturalH: number;
+              renderedW: number;
+              renderedH: number;
+              offsetX: number;
+              offsetY: number;
+          }
+        | null {
+        if (!this.displaySourceTag) return null;
+        const imgEl = this.displaySourceTag.nativeElement as HTMLImageElement;
+        if (!imgEl) return null;
+        const wrapper = imgEl.parentElement as HTMLElement;
+        if (!wrapper) return null;
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const imgRect = imgEl.getBoundingClientRect();
+        const naturalW = imgEl.naturalWidth || imgEl.width;
+        const naturalH = imgEl.naturalHeight || imgEl.height;
+        const style = window.getComputedStyle(imgEl);
+        const objectFit = style.getPropertyValue('object-fit') || 'contain';
+
+        let renderedW = imgRect.width;
+        let renderedH = imgRect.height;
+        let offsetX = imgRect.left - wrapperRect.left;
+        let offsetY = imgRect.top - wrapperRect.top;
+
+        if (objectFit === 'contain') {
+            const scale = Math.min(wrapperRect.width / naturalW, wrapperRect.height / naturalH);
+            renderedW = naturalW * scale;
+            renderedH = naturalH * scale;
+            offsetX = (wrapperRect.width - renderedW) / 2;
+            offsetY = (wrapperRect.height - renderedH) / 2;
+        } else if (objectFit === 'cover') {
+            const scale = Math.max(wrapperRect.width / naturalW, wrapperRect.height / naturalH);
+            renderedW = naturalW * scale;
+            renderedH = naturalH * scale;
+            offsetX = (wrapperRect.width - renderedW) / 2;
+            offsetY = (wrapperRect.height - renderedH) / 2;
+        } else if (objectFit === 'none') {
+            renderedW = Math.min(naturalW, wrapperRect.width);
+            renderedH = Math.min(naturalH, wrapperRect.height);
+            offsetX = 0;
+            offsetY = 0;
+        } else {
+            // fallback: use actual img rect offsets
+            offsetX = imgRect.left - wrapperRect.left;
+            offsetY = imgRect.top - wrapperRect.top;
+            renderedW = imgRect.width;
+            renderedH = imgRect.height;
+        }
+
+        return { wrapperRect, imgRect, naturalW, naturalH, renderedW, renderedH, offsetX, offsetY };
     }
 
     @HostListener('window:resize', ['$event'])
