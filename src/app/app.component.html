@@ -120,30 +120,48 @@
                                             'px'
                                     }"
                                 >
-                                    <img
-                                        *ngIf="project && project.image"
-                                        [src]="project.image.src"
-                                        [ngStyle]="{
-                                            height: project
-                                                .rendererConfiguration.center
-                                                ? '100%'
-                                                : 'auto',
-                                            width: project.rendererConfiguration
-                                                .center
-                                                ? '100%'
-                                                : 'auto',
-                                            'object-fit': project
-                                                .rendererConfiguration.fit
-                                                ? 'contain'
-                                                : 'none',
-                                            border: '1px solid',
-                                            'border-color':
-                                                'rgb(128, 128, 128)',
-                                            filter: project
-                                                ? project.imageConfiguration.css()
-                                                : ''
-                                        }"
-                                    />
+                                    <div style="position: relative; display: inline-block;">
+                                        <img
+                                            *ngIf="project && project.image"
+                                            #displaySource
+                                            [src]="project.image.src"
+                                            [ngStyle]="{
+                                                height: project
+                                                    .rendererConfiguration.center
+                                                    ? '100%'
+                                                    : 'auto',
+                                                width: project.rendererConfiguration
+                                                    .center
+                                                    ? '100%'
+                                                    : 'auto',
+                                                'object-fit': project
+                                                    .rendererConfiguration.fit
+                                                    ? 'contain'
+                                                    : 'none',
+                                                border: '1px solid',
+                                                'border-color':
+                                                    'rgb(128, 128, 128)',
+                                                filter: project
+                                                    ? project.imageConfiguration.css()
+                                                    : ''
+                                            }"
+                                        />
+                                        <div
+                                            class="crop-overlay"
+                                            [ngStyle]="{
+                                                left: cropLeft(),
+                                                top: cropTop(),
+                                                width: cropWidth(),
+                                                height: cropHeight()
+                                            }"
+                                            (mousedown)="startDrag($event, 'move')"
+                                        >
+                                            <div class="handle left" (mousedown)="startDrag($event,'left'); $event.stopPropagation()"></div>
+                                            <div class="handle right" (mousedown)="startDrag($event,'right'); $event.stopPropagation()"></div>
+                                            <div class="handle top" (mousedown)="startDrag($event,'top'); $event.stopPropagation()"></div>
+                                            <div class="handle bottom" (mousedown)="startDrag($event,'bottom'); $event.stopPropagation()"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

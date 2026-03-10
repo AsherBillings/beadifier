@@ -9,6 +9,7 @@ import {
     drawImageInsideCanvas,
     reduceColor,
     computeUsage,
+    CropRect,
 } from './utils/utils';
 import { Renderer } from './renderer/renderer';
 import { Canvas2dRenderer } from './renderer/2d/canvas.2d.renderer';
@@ -37,6 +38,7 @@ export class AppComponent {
     @ViewChild('canvasContainer', { static: true })
     canvasContainerTag: ElementRef;
     @ViewChild('preview', { static: true }) previewTag: ElementRef;
+    @ViewChild('displaySource', { static: false }) displaySourceTag: ElementRef;
 
     availableRenderers: Renderer[];
     renderer: Renderer;
@@ -47,6 +49,14 @@ export class AppComponent {
     reducedColor: Uint8ClampedArray;
     beadSize: number;
     loading: boolean;
+    // cropping
+    cropRect: CropRect;
+    private dragging: {
+        type: string;
+        startX: number;
+        startY: number;
+        orig: CropRect;
+    } | null;
 
     constructor(private paletteService: PaletteService) {
         // Rendering technology
@@ -68,6 +78,7 @@ export class AppComponent {
         this.beadSize = BEAD_SIZE_PX;
         this.scaler = new FitScreenScaler();
         this.loading = false;
+        this.dragging = null;
 
         // Default
         paletteService.getAll().subscribe((allPalette) => {
@@ -107,7 +118,8 @@ export class AppComponent {
                 const drawingPosition = drawImageInsideCanvas(
                     canvas,
                     this.imgTag.nativeElement,
-                    this.project.rendererConfiguration
+                    this.project.rendererConfiguration,
+                    this.cropRect
                 );
                 this.reducedColor = reduceColor(
                     canvas,
@@ -146,13 +158,139 @@ export class AppComponent {
         if (this.imgTag.nativeElement.src !== project.image.src) {
             this.imgTag.nativeElement.src = project.image.src;
             this.imgTag.nativeElement.addEventListener('load', () => {
-                this.project.srcWidth = this.imgTag.nativeElement.width;
-                this.project.srcHeight = this.imgTag.nativeElement.height;
+                // image natural size
+                this.project.srcWidth = this.imgTag.nativeElement.naturalWidth || this.imgTag.nativeElement.width;
+                this.project.srcHeight = this.imgTag.nativeElement.naturalHeight || this.imgTag.nativeElement.height;
+                // initialize crop to full image
+                this.cropRect = {
+                    sx: 0,
+                    sy: 0,
+                    sw: this.project.srcWidth,
+                    sh: this.project.srcHeight,
+                };
                 this._beadify();
             });
         } else {
             this._beadify();
         }
+    }
+
+    startDrag(event: MouseEvent, type: string) {
+        event.preventDefault();
+        this.dragging = {
+            type: type,
+            startX: event.clientX,
+            startY: event.clientY,
+            orig: { ...this.cropRect },
+        };
+        window.addEventListener('mousemove', this.onMouseMoveBound);
+        window.addEventListener('mouseup', this.onMouseUpBound);
+    }
+
+    private onMouseMoveBound = (ev: MouseEvent) => this.onMouseMove(ev);
+    private onMouseUpBound = (ev: MouseEvent) => this.onMouseUp(ev);
+
+    private onMouseMove(ev: MouseEvent) {
+        if (!this.dragging || !this.displaySourceTag) {
+            return;
+        }
+        const dispRect = this.displaySourceTag.nativeElement.getBoundingClientRect();
+        const imgNaturalW = this.imgTag.nativeElement.naturalWidth || this.imgTag.nativeElement.width;
+        const imgNaturalH = this.imgTag.nativeElement.naturalHeight || this.imgTag.nativeElement.height;
+
+        const sxPerPx = imgNaturalW / dispRect.width;
+        const syPerPx = imgNaturalH / dispRect.height;
+
+        const dx = ev.clientX - this.dragging.startX;
+        const dy = ev.clientY - this.dragging.startY;
+
+        const sdx = dx * sxPerPx;
+        const sdy = dy * syPerPx;
+
+        const orig = this.dragging.orig;
+        let nx = orig.sx;
+        let ny = orig.sy;
+        let nw = orig.sw;
+        let nh = orig.sh;
+
+        switch (this.dragging.type) {
+            case 'move':
+                nx = Math.round(orig.sx + sdx);
+                ny = Math.round(orig.sy + sdy);
+                break;
+            case 'left':
+                nx = Math.round(orig.sx + sdx);
+                nw = Math.round(orig.sw - sdx);
+                break;
+            case 'right':
+                nw = Math.round(orig.sw + sdx);
+                break;
+            case 'top':
+                ny = Math.round(orig.sy + sdy);
+                nh = Math.round(orig.sh - sdy);
+                break;
+            case 'bottom':
+                nh = Math.round(orig.sh + sdy);
+                break;
+        }
+
+        // clamp
+        if (nx < 0) {
+            nw -= -nx;
+            nx = 0;
+        }
+        if (ny < 0) {
+            nh -= -ny;
+            ny = 0;
+        }
+        if (nx + nw > imgNaturalW) {
+            nw = imgNaturalW - nx;
+        }
+        if (ny + nh > imgNaturalH) {
+            nh = imgNaturalH - ny;
+        }
+        if (nw < 1) nw = 1;
+        if (nh < 1) nh = 1;
+
+        this.cropRect = { sx: nx, sy: ny, sw: nw, sh: nh };
+    }
+
+    private onMouseUp(_ev: MouseEvent) {
+        if (this.dragging) {
+            this.dragging = null;
+            window.removeEventListener('mousemove', this.onMouseMoveBound);
+            window.removeEventListener('mouseup', this.onMouseUpBound);
+            // re-run beadify with new crop
+            this._beadify();
+        }
+    }
+
+    cropLeft(): string {
+        if (!this.displaySourceTag || !this.cropRect) return '0px';
+        const r = this.displaySourceTag.nativeElement.getBoundingClientRect();
+        const x = (this.cropRect.sx / (this.imgTag.nativeElement.naturalWidth || this.imgTag.nativeElement.width)) * r.width;
+        return Math.round(x) + 'px';
+    }
+
+    cropTop(): string {
+        if (!this.displaySourceTag || !this.cropRect) return '0px';
+        const r = this.displaySourceTag.nativeElement.getBoundingClientRect();
+        const y = (this.cropRect.sy / (this.imgTag.nativeElement.naturalHeight || this.imgTag.nativeElement.height)) * r.height;
+        return Math.round(y) + 'px';
+    }
+
+    cropWidth(): string {
+        if (!this.displaySourceTag || !this.cropRect) return '0px';
+        const r = this.displaySourceTag.nativeElement.getBoundingClientRect();
+        const w = (this.cropRect.sw / (this.imgTag.nativeElement.naturalWidth || this.imgTag.nativeElement.width)) * r.width;
+        return Math.round(w) + 'px';
+    }
+
+    cropHeight(): string {
+        if (!this.displaySourceTag || !this.cropRect) return '0px';
+        const r = this.displaySourceTag.nativeElement.getBoundingClientRect();
+        const h = (this.cropRect.sh / (this.imgTag.nativeElement.naturalHeight || this.imgTag.nativeElement.height)) * r.height;
+        return Math.round(h) + 'px';
     }
 
     @HostListener('window:resize', ['$event'])

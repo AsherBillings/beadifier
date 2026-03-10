@@ -29,10 +29,18 @@ export class ImagePosition {
     }
 }
 
+export interface CropRect {
+    sx: number;
+    sy: number;
+    sw: number;
+    sh: number;
+}
+
 export function drawImageInsideCanvas(
     canvas,
     image,
-    rendererConfiguration: RendererConfiguration
+    rendererConfiguration: RendererConfiguration,
+    crop?: CropRect
 ): ImagePosition {
     /**
      * Credit to : https://sdqali.in/blog/2013/10/03/fitting-an-image-in-to-a-canvas-object/
@@ -79,16 +87,30 @@ export function drawImageInsideCanvas(
     const rrenderableWidth = Math.floor(renderableWidth);
     const rrenderableHeight = Math.floor(renderableHeight);
 
-    canvas.getContext('2d').filter = image.style.filter;
-    canvas
-        .getContext('2d')
-        .drawImage(
+    const ctx = canvas.getContext('2d');
+    ctx.filter = image.style.filter;
+    if (crop) {
+        // draw only cropped source area into the destination rectangle
+        ctx.drawImage(
+            image,
+            Math.floor(crop.sx),
+            Math.floor(crop.sy),
+            Math.floor(crop.sw),
+            Math.floor(crop.sh),
+            rxStart,
+            ryStart,
+            rrenderableWidth,
+            rrenderableHeight
+        );
+    } else {
+        ctx.drawImage(
             image,
             rxStart,
             ryStart,
             rrenderableWidth,
             rrenderableHeight
         );
+    }
     return new ImagePosition(
         rxStart,
         ryStart,
