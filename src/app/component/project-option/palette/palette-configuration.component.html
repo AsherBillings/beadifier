@@ -44,14 +44,7 @@
         *ngFor="let palette of configuration.palettes"
         fxLayoutAlign="start center"
     >
-        <div fxLayout="row wrap" fxFlex="100%" style="margin-bottom: 1em">
-            <mat-slide-toggle
-                [checked]="enableAllPaletteEntry[palette.name]"
-                (change)="toggleAll($event, palette.name)"
-                >All</mat-slide-toggle
-            >
-        </div>
-        <!-- per-palette presets dropdown removed; using top-level presets selector instead -->
+        <!-- per-palette presets removed; using top-level presets selector instead -->
         <div
             fxFlex.xs="50%"
             fxFlex.sm="33%"

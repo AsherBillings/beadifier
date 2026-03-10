@@ -15,16 +15,10 @@ export class PaletteConfigurationComponent {
     @Output() onChange = new EventEmitter<PaletteConfiguration>();
 
     availablePalettes: Observable<Palette[]>;
-    enableAllPaletteEntry: Map<string, boolean>;
     selectedPresets: any = {};
 
     constructor(public paletteService: PaletteService) {
         this.availablePalettes = paletteService.getAll();
-        this.enableAllPaletteEntry = new Map();
-
-        this.availablePalettes.subscribe((palettes) =>
-            palettes.forEach((p) => (this.enableAllPaletteEntry[p.name] = true))
-        );
     }
 
     getPresets(name: string): Observable<{ name: string; refs: string[] }[]> {
@@ -38,6 +32,12 @@ export class PaletteConfigurationComponent {
         this.paletteService.getPresets(palette.name).subscribe((presets) => {
             const preset = (presets || []).find((p) => p.name === presetName);
             if (!preset) {
+                return;
+            }
+            // If preset.refs contains '*' treat it as "select all colours"
+            if ((preset.refs || []).some((r) => r === '*')) {
+                palette.entries.forEach((entry) => (entry.enabled = true));
+                this.callback();
                 return;
             }
             palette.entries.forEach((entry) => {
@@ -60,15 +60,6 @@ export class PaletteConfigurationComponent {
         }
         if (!this.configuration || !this.configuration.palettes) return;
         this.configuration.palettes.forEach((p) => this.applyPreset(p, presetName));
-    }
-
-    toggleAll(e, name) {
-        this.configuration.palettes.forEach((p) => {
-            if (p.name === name) {
-                p.entries.forEach((entry) => (entry.enabled = e.checked));
-            }
-        });
-        this.callback();
     }
 
     paletteEquality(o1: Palette, o2: Palette) {

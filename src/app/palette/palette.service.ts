@@ -27,12 +27,20 @@ export class PaletteService {
         if (this.presetsCache.has(key)) {
             return this.presetsCache.get(key);
         }
-        const obs = this.http
-            .get<{ name: string; refs: string[] }[]>(`assets/presets/${key}.json`)
-            .pipe(
-                catchError(() => of([])),
-                shareReplay(1)
-            );
+        const obs = this.http.get<{ name: string; refs: string[] }[]>(`assets/presets/${key}.json`).pipe(
+            map((presets) => {
+                const list = presets || [];
+                // Prepend default "All colours" preset, avoid duplicate names
+                const names = new Set(list.map((p) => p.name));
+                const defaultPreset = { name: 'All colours', refs: ['*'] };
+                const result = names.has(defaultPreset.name)
+                    ? list
+                    : [defaultPreset, ...list];
+                return result;
+            }),
+            catchError(() => of([{ name: 'All colours', refs: ['*'] }])),
+            shareReplay(1)
+        );
         this.presetsCache.set(key, obs);
         return obs;
     }
