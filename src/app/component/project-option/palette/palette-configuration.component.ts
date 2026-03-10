@@ -30,6 +30,12 @@ export class PaletteConfigurationComponent {
         if (!presetName) {
             return;
         }
+        // special-case: No colours preset disables all entries
+        if (presetName === '__no_colours__') {
+            palette.entries.forEach((entry) => (entry.enabled = false));
+            this.callback();
+            return;
+        }
         this.paletteService.getPresets(palette.name).subscribe((presets) => {
             const preset = (presets || []).find((p) => p.name === presetName);
             if (!preset) {
