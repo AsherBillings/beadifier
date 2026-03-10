@@ -16,14 +16,42 @@ export class PaletteConfigurationComponent {
 
     availablePalettes: Observable<Palette[]>;
     enableAllPaletteEntry: Map<string, boolean>;
+    selectedPresets: any = {};
 
-    constructor(private paletteService: PaletteService) {
+    constructor(public paletteService: PaletteService) {
         this.availablePalettes = paletteService.getAll();
         this.enableAllPaletteEntry = new Map();
 
         this.availablePalettes.subscribe((palettes) =>
             palettes.forEach((p) => (this.enableAllPaletteEntry[p.name] = true))
         );
+    }
+
+    getPresets(name: string): Observable<{ name: string; refs: string[] }[]> {
+        return this.paletteService.getPresets(name);
+    }
+
+    applyPreset(palette: Palette, presetName: string) {
+        if (!presetName) {
+            return;
+        }
+        this.paletteService.getPresets(palette.name).subscribe((presets) => {
+            const preset = (presets || []).find((p) => p.name === presetName);
+            if (!preset) {
+                return;
+            }
+            palette.entries.forEach((entry) => {
+                const match = preset.refs.some((r) => {
+                    if (!entry.ref) return false;
+                    if (entry.ref === r) return true;
+                    if (entry.ref.endsWith(r)) return true;
+                    if (entry.name === r) return true;
+                    return false;
+                });
+                entry.enabled = match;
+            });
+            this.callback();
+        });
     }
 
     toggleAll(e, name) {
