@@ -160,6 +160,10 @@
                                             <div class="handle right" (mousedown)="startDrag($event,'right'); $event.stopPropagation()"></div>
                                             <div class="handle top" (mousedown)="startDrag($event,'top'); $event.stopPropagation()"></div>
                                             <div class="handle bottom" (mousedown)="startDrag($event,'bottom'); $event.stopPropagation()"></div>
+                                            <div class="handle corner tl" (mousedown)="startDrag($event,'top-left'); $event.stopPropagation()"></div>
+                                            <div class="handle corner tr" (mousedown)="startDrag($event,'top-right'); $event.stopPropagation()"></div>
+                                            <div class="handle corner bl" (mousedown)="startDrag($event,'bottom-left'); $event.stopPropagation()"></div>
+                                            <div class="handle corner br" (mousedown)="startDrag($event,'bottom-right'); $event.stopPropagation()"></div>
                                         </div>
                                     </div>
                                 </div>

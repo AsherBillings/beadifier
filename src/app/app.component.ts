@@ -232,6 +232,26 @@ export class AppComponent {
             case 'bottom':
                 nh = Math.round(orig.sh + sdy);
                 break;
+            case 'top-left':
+                nx = Math.round(orig.sx + sdx);
+                nw = Math.round(orig.sw - sdx);
+                ny = Math.round(orig.sy + sdy);
+                nh = Math.round(orig.sh - sdy);
+                break;
+            case 'top-right':
+                nw = Math.round(orig.sw + sdx);
+                ny = Math.round(orig.sy + sdy);
+                nh = Math.round(orig.sh - sdy);
+                break;
+            case 'bottom-left':
+                nx = Math.round(orig.sx + sdx);
+                nw = Math.round(orig.sw - sdx);
+                nh = Math.round(orig.sh + sdy);
+                break;
+            case 'bottom-right':
+                nw = Math.round(orig.sw + sdx);
+                nh = Math.round(orig.sh + sdy);
+                break;
         }
 
         // clamp
