@@ -1,4 +1,4 @@
-<div [ngStyle]="{ 'width.px': (configuration.nbBoardWidth + 1) * 40 }">
+<div class="board-wrap" [ngStyle]="{ 'width.px': (configuration.nbBoardWidth + 1) * 40 }">
     <mat-grid-list
         [cols]="configuration.nbBoardWidth + 1"
         gutterSize="3"
@@ -66,4 +66,21 @@
             </div>
         </mat-grid-tile>
     </mat-grid-list>
+    <button
+        aria-label="increase both"
+        class="btn-small btn-both-plus"
+        mat-raised-button
+        (click)="increaseBoth()"
+    >
+        <mat-icon>add</mat-icon>
+    </button>
+    <button
+        aria-label="decrease both"
+        class="btn-small btn-both-minus"
+        mat-raised-button
+        (click)="decreaseBoth()"
+        *ngIf="configuration.nbBoardWidth > 1 || configuration.nbBoardHeight > 1"
+    >
+        <mat-icon>remove</mat-icon>
+    </button>
 </div>

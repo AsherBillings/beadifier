@@ -1,4 +1,4 @@
-:host {
+ :host {
     .btn-small {
         width: 33px !important;
         min-width: 33px !important;
@@ -19,4 +19,23 @@
         top: 0px;
         left: 0px;
     }
+
+    .btn-both-plus {
+        position: absolute;
+        bottom: 6px;
+        right: 6px;
+        z-index: 6;
+    }
+
+    .btn-both-minus {
+        position: absolute;
+        bottom: 6px;
+        /* place to the right of the plus button (button width + gap) */
+        right: -42px;
+        z-index: 6;
+    }
+}
+
+.board-wrap {
+    position: relative;
 }

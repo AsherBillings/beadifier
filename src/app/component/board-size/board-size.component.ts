@@ -33,6 +33,22 @@ export class BoardSizeComponent {
         this.onChangeCallback();
     }
 
+    increaseBoth() {
+        this.configuration.nbBoardWidth++;
+        this.configuration.nbBoardHeight++;
+        this.onChangeCallback();
+    }
+
+    decreaseBoth() {
+        if (this.configuration.nbBoardWidth > 1) {
+            this.configuration.nbBoardWidth--;
+        }
+        if (this.configuration.nbBoardHeight > 1) {
+            this.configuration.nbBoardHeight--;
+        }
+        this.onChangeCallback();
+    }
+
     onChangeCallback() {
         this.onBoardSizeChange.emit();
     }
