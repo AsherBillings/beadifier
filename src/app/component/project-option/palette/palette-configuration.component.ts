@@ -41,12 +41,9 @@ export class PaletteConfigurationComponent {
                 return;
             }
             palette.entries.forEach((entry) => {
-                const match = preset.refs.some((r) => {
+                const match = (preset.refs || []).some((r) => {
                     if (!entry.ref) return false;
-                    if (entry.ref === r) return true;
-                    if (entry.ref.endsWith(r)) return true;
-                    if (entry.name === r) return true;
-                    return false;
+                    return entry.ref === r;
                 });
                 entry.enabled = match;
             });
