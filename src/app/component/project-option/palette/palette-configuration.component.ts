@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Component, Input, EventEmitter, Output, OnInit } from '@angular/core';
+import { Component, Input, EventEmitter, Output } from '@angular/core';
 import { PaletteService } from '../../../palette/palette.service';
 import { PaletteConfiguration } from '../../../model/configuration/palette-configuration.model';
 import { Palette } from '../../../model/palette/palette.model';
@@ -10,7 +10,7 @@ import { Palette } from '../../../model/palette/palette.model';
     templateUrl: './palette-configuration.component.html',
     styleUrls: ['./palette-configuration.component.scss'],
 })
-export class PaletteConfigurationComponent implements OnInit {
+export class PaletteConfigurationComponent {
     @Input() configuration: PaletteConfiguration;
     @Output() onChange = new EventEmitter<PaletteConfiguration>();
 
@@ -21,14 +21,6 @@ export class PaletteConfigurationComponent implements OnInit {
         this.availablePalettes = paletteService.getAll();
     }
 
-    ngOnInit() {
-        if (this.configuration && this.configuration.palettes && this.configuration.palettes.length > 0) {
-            if (!this.selectedPresets.top) {
-                this.selectedPresets.top = 'All colours';
-                this.applyPresetToSelected('All colours');
-            }
-        }
-    }
 
     getPresets(name: string): Observable<{ name: string; refs: string[] }[]> {
         return this.paletteService.getPresets(name);
@@ -74,12 +66,14 @@ export class PaletteConfigurationComponent implements OnInit {
 
     callback() {
         this.onChange.emit(this.configuration);
-        // If palettes were just selected and no top preset chosen, default to All colours
+        // Ensure each selected palette has a default preset selected (All colours)
         if (this.configuration && this.configuration.palettes && this.configuration.palettes.length > 0) {
-            if (!this.selectedPresets.top) {
-                this.selectedPresets.top = 'All colours';
-                this.applyPresetToSelected('All colours');
-            }
+            this.configuration.palettes.forEach((p) => {
+                if (!this.selectedPresets[p.name]) {
+                    this.selectedPresets[p.name] = 'All colours';
+                    this.applyPreset(p, 'All colours');
+                }
+            });
         }
     }
 }
