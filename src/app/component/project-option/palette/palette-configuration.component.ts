@@ -54,6 +54,14 @@ export class PaletteConfigurationComponent {
         });
     }
 
+    applyPresetToSelected(presetName: string) {
+        if (!presetName) {
+            return;
+        }
+        if (!this.configuration || !this.configuration.palettes) return;
+        this.configuration.palettes.forEach((p) => this.applyPreset(p, presetName));
+    }
+
     toggleAll(e, name) {
         this.configuration.palettes.forEach((p) => {
             if (p.name === name) {
